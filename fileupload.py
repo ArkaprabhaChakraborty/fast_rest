@@ -1,10 +1,12 @@
+import io
 import os
+import zipfile
 import uvicorn
 
 import uvicorn
 import cv2
 
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, Response
 from fastapi.responses import HTMLResponse
 from imutils.perspective import four_point_transform
 
@@ -14,7 +16,7 @@ app = FastAPI()
 def save_file(file:UploadFile, path:str):
     try:
         os.mkdir("images")
-        print("[INFO] Created Directory : {}".format(os.getcwd()))
+        print("[INFO] Created Directory : {}".format(os.getcwd() + "/images"))
     except Exception as e:
         print("[INFO] 'images' Directory already exists") 
     file_name = os.getcwd()+path+file.filename.replace(" ", "-")
@@ -49,7 +51,7 @@ def detect_bounds(image,savename=""):
     # warped = cv2.cvtColor(warped, cv2.COLOR_BGR2GRAY)
     try:
         os.mkdir("corrected")
-        print("[INFO] Created Directory : {}".format(os.getcwd()))
+        print("[INFO] Created Directory : {}".format(os.getcwd() + "/corrected"))
     except Exception as e:
         print("[INFO] 'corrected' Directory already exists")   
     # write the image in the ouput directory
@@ -69,6 +71,24 @@ async def create_upload_files(imagefile: UploadFile = File(...)):
     return {"file_name":imagefile.filename, "document_detected": if_detected}
 
 
+@app.get("/corrected/", status_code=200)
+async def get_corrected_files():
+    zipfilename = "corrected.zip"
+    s = io.BytesIO()
+    zf = zipfile.ZipFile(s, "w")
+    for fname in os.listdir(os.getcwd() + "/corrected/"):
+        path = os.path.join(os.getcwd() + "/corrected/")
+        zippath = os.path.join(path, fname)
+        zf.write(zippath,fname)
+    zf.close()
+
+    resp = Response(s.getvalue(), 
+                    media_type = "application/x-zip-compressed", 
+                    headers = {
+                                'Content-Disposition': f'attachment;filename={zipfilename}'
+                              }, 
+                    status_code=200)
+    return resp
 
 
 @app.get("/")
