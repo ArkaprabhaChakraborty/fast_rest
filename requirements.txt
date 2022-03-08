@@ -1,0 +1,7 @@
+uvicorn
+opencv-python
+opencv-contrib-python
+numpy
+fastapi
+gunicorn
+imutils
