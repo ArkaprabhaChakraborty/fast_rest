@@ -6,3 +6,4 @@ fastapi
 gunicorn
 imutils
 scipy
+python-multipart
